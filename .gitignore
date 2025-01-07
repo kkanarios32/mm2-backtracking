@@ -20,3 +20,4 @@ nsys
 workloads
 .cmake/**
 .depend
+test

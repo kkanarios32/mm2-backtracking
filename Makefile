@@ -3,8 +3,9 @@ CDEBUG_FLAGS= -g -O2 #-Wall -Wextra -Wno-unused-parameter -Wno-unused-variable -
 CPPFLAGS=	-DHAVE_KALLOC -D__AMD_SPLIT_KERNELS__ # -Wno-unused-but-set-variable -Wno-unused-variable
 CPPFLAGS+= 	$(if $(MAX_MICRO_BATCH),-DMAX_MICRO_BATCH=\($(MAX_MICRO_BATCH)\))
 INCLUDES=	-I .
-OBJS=		kthread.o kalloc.o misc.o bseq.o sketch.o sdust.o options.o index.o \
-			lchain.o align.o hit.o seed.o map.o format.o pe.o esterr.o splitidx.o \
+
+BT_OBJS=  kthread.o kalloc.o misc.o bseq.o sketch.o sdust.o options.o index.o \
+			lchain.o align.o hit.o seed.o map_bt.o format.o pe.o esterr.o splitidx.o \
 			ksw2_ll_sse.o
 # PROG=		minimap2-zerobranch-debug
 # PROG=		minimap2-nobalance-debug
@@ -73,14 +74,10 @@ $(CJSON_OBJ):
 include gpu/gpu.mk
 
 
-# compile with nvcc/hipcc
-$(PROG):main.o libminimap2.a
-		$(GPU_CC) $(CFLAGS) $(GPU_FLAGS) main.o -o $@ -L. -lminimap2 $(LIBS)
+mm2-backtrack:main.o libminimap2_bt.a
+		$(CC) $(CFLAGS) $< -o $@ -L. -lminimap2_bt $(LIBS)
 
-minimap2-lite:example.o libminimap2.a
-		$(GPU_CC) $(CFLAGS)  $(GPU_FLAGS) $< -o $@ -L. -lminimap2 $(LIBS)
-
-libminimap2.a:$(OBJS) $(CU_OBJS) $(CJSON_OBJ)
+libminimap2_bt.a:$(BT_OBJS) $(CJSON_OBJ)
 		$(AR) -csru $@ $^
 
 sdust:sdust.c kalloc.o kalloc.h kdq.h kvec.h kseq.h ketopt.h sdust.h
@@ -139,6 +136,7 @@ align.o: minimap.h mmpriv.h bseq.h kseq.h ksw2.h kalloc.h
 bseq.o: bseq.h kvec.h kalloc.h kseq.h
 esterr.o: mmpriv.h minimap.h bseq.h kseq.h
 example.o: minimap.h kseq.h
+main.o: minimap.h kseq.h
 format.o: kalloc.h mmpriv.h minimap.h bseq.h kseq.h
 hit.o: mmpriv.h minimap.h bseq.h kseq.h kalloc.h khash.h
 index.o: kthread.h bseq.h minimap.h mmpriv.h kseq.h kvec.h kalloc.h khash.h
@@ -150,9 +148,10 @@ ksw2_extz2_sse.o: ksw2.h kalloc.h
 ksw2_ll_sse.o: ksw2.h kalloc.h
 kthread.o: kthread.h
 lchain.o: mmpriv.h minimap.h bseq.h kseq.h kalloc.h krmq.h
-main.o: bseq.h minimap.h mmpriv.h kseq.h ketopt.h
 map.o: kthread.h kvec.h kalloc.h sdust.h mmpriv.h minimap.h bseq.h kseq.h
 map.o: khash.h ksort.h
+map_bt.o: kthread.h kvec.h kalloc.h sdust.h mmpriv.h minimap.h bseq.h kseq.h
+map_bt.o: khash.h ksort.h
 misc.o: mmpriv.h minimap.h bseq.h kseq.h ksort.h
 options.o: mmpriv.h minimap.h bseq.h kseq.h
 pe.o: mmpriv.h minimap.h bseq.h kseq.h kvec.h kalloc.h ksort.h
